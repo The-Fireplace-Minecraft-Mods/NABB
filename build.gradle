@@ -37,7 +37,7 @@ minecraft {
     runDir = "run"
     replace '${version}', project.version
     mappings = "stable_29"
-    useDepAts = true
+    //useDepAts = true
 }
 
 dependencies {
