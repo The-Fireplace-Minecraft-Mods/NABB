@@ -101,7 +101,7 @@ public class NABB {
 
         NBTTagCompound nbttagcompound = new NBTTagCompound();
         princess.writeToNBT(nbttagcompound);
-        ItemStack queenStack = new ItemStack(PluginApiculture.items.beeQueenGE);
+        ItemStack queenStack = new ItemStack(PluginApiculture.getItems().beeQueenGE);
         queenStack.setTagCompound(nbttagcompound);
 
         // Register the new queen with the breeding tracker
