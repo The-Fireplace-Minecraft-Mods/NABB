@@ -1,0 +1,7 @@
+{
+  "bee_squelch": {
+    "category": "player",
+    "subtitle": "nabb.subtitle.bee_squelch",
+    "sounds": [ "nabb:squelch" ]
+  }
+}
