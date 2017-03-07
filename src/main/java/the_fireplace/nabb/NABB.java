@@ -54,7 +54,7 @@ public class NABB {
         }
         if(BeeManager.beeRoot.getType(stack1) != null && BeeManager.beeRoot.getType(stack2) != null) {
             if((BeeManager.beeRoot.isDrone(stack1) && BeeManager.beeRoot.getType(stack2) == EnumBeeType.PRINCESS) || (BeeManager.beeRoot.isDrone(stack2) && BeeManager.beeRoot.getType(stack1) == EnumBeeType.PRINCESS)) {
-                if (event.getEntityLiving().worldObj.isRemote && !popBee) {
+                if (event.getEntityLiving().world.isRemote && !popBee) {
                     flag = true;
                 }
                 popBee = true;
@@ -77,16 +77,16 @@ public class NABB {
             if(ticksWaiting >= 130) {
                 stack1 = stack1.copy();
                 stack2 = stack2.copy();
-                if (BeeManager.beeRoot.getType(stack1) != null && BeeManager.beeRoot.getType(stack2) != null && !event.getEntityLiving().worldObj.isRemote) {
+                if (BeeManager.beeRoot.getType(stack1) != null && BeeManager.beeRoot.getType(stack2) != null && !event.getEntityLiving().world.isRemote) {
                     if ((BeeManager.beeRoot.isDrone(stack1) && BeeManager.beeRoot.getType(stack2) == EnumBeeType.PRINCESS)) {
-                        event.getEntityLiving().setItemStackToSlot(EntityEquipmentSlot.OFFHAND, breed(stack1, stack2, ((EntityPlayer) event.getEntityLiving()).worldObj, ((EntityPlayer) event.getEntityLiving()).getGameProfile()));
+                        event.getEntityLiving().setItemStackToSlot(EntityEquipmentSlot.OFFHAND, breed(stack1, stack2, ((EntityPlayer) event.getEntityLiving()).world, ((EntityPlayer) event.getEntityLiving()).getGameProfile()));
                         event.getEntityLiving().setItemStackToSlot(EntityEquipmentSlot.MAINHAND, null);
                     } else if ((BeeManager.beeRoot.isDrone(stack2) && BeeManager.beeRoot.getType(stack1) == EnumBeeType.PRINCESS)) {
-                        event.getEntityLiving().setItemStackToSlot(EntityEquipmentSlot.MAINHAND, breed(stack2, stack1, ((EntityPlayer) event.getEntityLiving()).worldObj, ((EntityPlayer) event.getEntityLiving()).getGameProfile()));
+                        event.getEntityLiving().setItemStackToSlot(EntityEquipmentSlot.MAINHAND, breed(stack2, stack1, ((EntityPlayer) event.getEntityLiving()).world, ((EntityPlayer) event.getEntityLiving()).getGameProfile()));
                         event.getEntityLiving().setItemStackToSlot(EntityEquipmentSlot.OFFHAND, null);
                     }
                 }
-                Minecraft.getMinecraft().theWorld.playSound(Minecraft.getMinecraft().thePlayer.getPosition(), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 1.0F, 1.0F, false);
+                Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player.getPosition(), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 1.0F, 1.0F, false);
                 popBee = false;
                 ticksWaiting = 0;
             }
@@ -130,10 +130,10 @@ public class NABB {
                 ticksUsing--;
 
             if(ticksUsing >= 32){
-                Minecraft.getMinecraft().theWorld.playSound(Minecraft.getMinecraft().thePlayer.getPosition(), this.beeSquelchSound, SoundCategory.PLAYERS, 1.0F, 0.5F+Minecraft.getMinecraft().theWorld.rand.nextFloat(), false);
+                Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player.getPosition(), this.beeSquelchSound, SoundCategory.PLAYERS, 1.0F, 0.5F+Minecraft.getMinecraft().world.rand.nextFloat(), false);
                 reverse = true;
             }else if(ticksUsing <= 0){
-                Minecraft.getMinecraft().theWorld.playSound(Minecraft.getMinecraft().thePlayer.getPosition(), this.beeSquelchSound, SoundCategory.PLAYERS, 1.0F, 0.5F+Minecraft.getMinecraft().theWorld.rand.nextFloat(), false);
+                Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player.getPosition(), this.beeSquelchSound, SoundCategory.PLAYERS, 1.0F, 0.5F+Minecraft.getMinecraft().world.rand.nextFloat(), false);
                 reverse = false;
                 if(iter < 2)
                     iter++;

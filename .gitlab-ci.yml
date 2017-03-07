@@ -4,8 +4,8 @@ variables:
   CACHE_DIR: "$CI_PROJECT_DIR/build"
   CACHE_DIR2: "$CI_PROJECT_DIR/.gradle"
   
-  ORIG_ARTIFACTS: "$CI_PROJECT_DIR/build/libs/NewAgeBeeBreeding-1.9.4-*.jar"
-  ARTIFACTS: "$CI_PROJECT_DIR/NewAgeBeeBreeding-1.9.4-*.jar"
+  ORIG_ARTIFACTS: "$CI_PROJECT_DIR/build/libs/NewAgeBeeBreeding-1.10.2-*.jar"
+  ARTIFACTS: "$CI_PROJECT_DIR/NewAgeBeeBreeding-1.10.2-*.jar"
 
 cache:
  paths:
@@ -21,11 +21,11 @@ deploy:
   stage: deploy
   script:
   - ./gradlew clean
-  - ./gradlew build curseforge -PcurseForgeApiKey=$curseForgeApiKey -PmodsioApiKey=$modsioApiKey # uploadToModsIO
+  - ./gradlew build curseforge uploadToModsIO -PcurseForgeApiKey=$curseForgeApiKey -PmodsioApiKey=$modsioApiKey
   - cp $ORIG_ARTIFACTS .
   when: manual
   artifacts:
-    name: "NewAgeBeeBreeding-1.9.4-$(cat $CACHE_DIR/.version)"
+    name: "NewAgeBeeBreeding-1.10.2-$(cat $CACHE_DIR/.version)"
     paths:
     - $ARTIFACTS
 
@@ -37,6 +37,6 @@ deployMaven:
   - cp $ORIG_ARTIFACTS .
   when: manual
   artifacts:
-    name: "NewAgeBeeBreeding-1.9.4-$(cat $CACHE_DIR/.version)"
+    name: "NewAgeBeeBreeding-1.10.2-$(cat $CACHE_DIR/.version)"
     paths:
     - $ARTIFACTS
