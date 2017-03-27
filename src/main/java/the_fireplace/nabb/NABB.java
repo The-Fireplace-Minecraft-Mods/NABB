@@ -1,32 +1,27 @@
 package the_fireplace.nabb;
 
-import com.mojang.authlib.GameProfile;
 import forestry.api.apiculture.BeeManager;
 import forestry.api.apiculture.EnumBeeType;
-import forestry.api.apiculture.IBee;
-import forestry.apiculture.PluginApiculture;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
-import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import the_fireplace.nabb.network.BeePopMessage;
+import the_fireplace.nabb.network.PacketDispatcher;
 
 /**
  * @author The_Fireplace
@@ -39,75 +34,30 @@ public class NABB {
     ResourceLocation location = new ResourceLocation(MODID, "bee_squelch");
     SoundEvent beeSquelchSound = new SoundEvent(location);
 
+    @SidedProxy(clientSide = "the_fireplace."+MODID+".client.ClientProxy", serverSide = "the_fireplace."+MODID+".CommonProxy")
+    public static CommonProxy proxy;
+
     @Mod.EventHandler
     public void init(FMLInitializationEvent event){
         GameRegistry.register(beeSquelchSound, location);
         MinecraftForge.EVENT_BUS.register(this);
+        PacketDispatcher.registerPackets();
     }
 
     @SubscribeEvent
     public void itemRightClick(PlayerInteractEvent.RightClickItem event){
         ItemStack stack1 = event.getEntityLiving().getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
         ItemStack stack2 = event.getEntityLiving().getItemStackFromSlot(EntityEquipmentSlot.OFFHAND);
-        if(stack2 == null || stack1 == null) {
+        if(stack2.isEmpty() || stack1.isEmpty()) {
             return;
         }
         if(BeeManager.beeRoot.getType(stack1) != null && BeeManager.beeRoot.getType(stack2) != null) {
             if((BeeManager.beeRoot.isDrone(stack1) && BeeManager.beeRoot.getType(stack2) == EnumBeeType.PRINCESS) || (BeeManager.beeRoot.isDrone(stack2) && BeeManager.beeRoot.getType(stack1) == EnumBeeType.PRINCESS)) {
-                if (event.getEntityLiving().world.isRemote && !popBee) {
+                if (event.getEntityLiving().world.isRemote) {
                     flag = true;
                 }
-                popBee = true;
             }
         }
-    }
-
-    private int ticksWaiting = 0;
-    private boolean popBee = false;
-    @SubscribeEvent
-    public void livingUpdate(LivingEvent.LivingUpdateEvent event){
-        if(!event.getEntityLiving().getEntityWorld().isRemote && event.getEntityLiving() instanceof EntityPlayer && popBee){
-            ItemStack stack1 = event.getEntityLiving().getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
-            ItemStack stack2 = event.getEntityLiving().getItemStackFromSlot(EntityEquipmentSlot.OFFHAND);
-            if(stack2 == null || stack1 == null) {
-                popBee = false;
-                ticksWaiting = 0;
-                return;
-            }
-            if(ticksWaiting >= 130) {
-                stack1 = stack1.copy();
-                stack2 = stack2.copy();
-                if (BeeManager.beeRoot.getType(stack1) != null && BeeManager.beeRoot.getType(stack2) != null && !event.getEntityLiving().world.isRemote) {
-                    if ((BeeManager.beeRoot.isDrone(stack1) && BeeManager.beeRoot.getType(stack2) == EnumBeeType.PRINCESS)) {
-                        event.getEntityLiving().setItemStackToSlot(EntityEquipmentSlot.OFFHAND, breed(stack1, stack2, ((EntityPlayer) event.getEntityLiving()).world, ((EntityPlayer) event.getEntityLiving()).getGameProfile()));
-                        event.getEntityLiving().setItemStackToSlot(EntityEquipmentSlot.MAINHAND, null);
-                    } else if ((BeeManager.beeRoot.isDrone(stack2) && BeeManager.beeRoot.getType(stack1) == EnumBeeType.PRINCESS)) {
-                        event.getEntityLiving().setItemStackToSlot(EntityEquipmentSlot.MAINHAND, breed(stack2, stack1, ((EntityPlayer) event.getEntityLiving()).world, ((EntityPlayer) event.getEntityLiving()).getGameProfile()));
-                        event.getEntityLiving().setItemStackToSlot(EntityEquipmentSlot.OFFHAND, null);
-                    }
-                }
-                Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player.getPosition(), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 1.0F, 1.0F, false);
-                popBee = false;
-                ticksWaiting = 0;
-            }
-            ticksWaiting++;
-        }
-    }
-
-    public ItemStack breed(ItemStack droneStack, ItemStack princessStack, World world, GameProfile player){
-        IBee princess = BeeManager.beeRoot.getMember(princessStack);
-        IBee drone = BeeManager.beeRoot.getMember(droneStack);
-        princess.mate(drone);
-
-        NBTTagCompound nbttagcompound = new NBTTagCompound();
-        princess.writeToNBT(nbttagcompound);
-        ItemStack queenStack = new ItemStack(PluginApiculture.getItems().beeQueenGE);
-        queenStack.setTagCompound(nbttagcompound);
-
-        // Register the new queen with the breeding tracker
-        BeeManager.beeRoot.getBreedingTracker(world, player).registerQueen(princess);
-
-        return queenStack;
     }
 
     private boolean reverse = false;
@@ -140,6 +90,7 @@ public class NABB {
                 else{
                     flag=false;
                     iter = 0;
+                    PacketDispatcher.sendToServer(new BeePopMessage());
                 }
             }
         }

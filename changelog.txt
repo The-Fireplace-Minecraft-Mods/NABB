@@ -1,1 +1,2 @@
-Updated to 1.11.2
+Fixed a crash
+Greatly improved client-server synchronization
