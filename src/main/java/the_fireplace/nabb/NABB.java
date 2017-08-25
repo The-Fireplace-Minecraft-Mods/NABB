@@ -2,6 +2,7 @@ package the_fireplace.nabb;
 
 import forestry.api.apiculture.BeeManager;
 import forestry.api.apiculture.EnumBeeType;
+import net.minecraft.block.SoundType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -12,6 +13,7 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
@@ -27,25 +29,29 @@ import the_fireplace.nabb.network.PacketDispatcher;
  * @author The_Fireplace
  */
 @Mod(modid=NABB.MODID, name=NABB.MODNAME, dependencies = "required-after:forestry")
+@Mod.EventBusSubscriber
 public class NABB {
     public static final String MODID = "nabb";
     public static final String MODNAME = "New Age Bee Breeding";
 
-    ResourceLocation location = new ResourceLocation(MODID, "bee_squelch");
-    SoundEvent beeSquelchSound = new SoundEvent(location);
+    private static final ResourceLocation location = new ResourceLocation(MODID, "bee_squelch");
+    public static final SoundEvent beeSquelchSound = new SoundEvent(location).setRegistryName(location);
 
     @SidedProxy(clientSide = "the_fireplace."+MODID+".client.ClientProxy", serverSide = "the_fireplace."+MODID+".CommonProxy")
     public static CommonProxy proxy;
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event){
-        GameRegistry.register(beeSquelchSound, location);
-        MinecraftForge.EVENT_BUS.register(this);
         PacketDispatcher.registerPackets();
     }
 
     @SubscribeEvent
-    public void itemRightClick(PlayerInteractEvent.RightClickItem event){
+    public static void registerSound(RegistryEvent.Register<SoundEvent> event){
+    	event.getRegistry().register(beeSquelchSound);
+    }
+
+    @SubscribeEvent
+    public static void itemRightClick(PlayerInteractEvent.RightClickItem event){
         ItemStack stack1 = event.getEntityLiving().getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
         ItemStack stack2 = event.getEntityLiving().getItemStackFromSlot(EntityEquipmentSlot.OFFHAND);
         if(stack2.isEmpty() || stack1.isEmpty()) {
@@ -60,14 +66,14 @@ public class NABB {
         }
     }
 
-    private boolean reverse = false;
-    private boolean flag = false;
-    private int iter = 0;
-    private int ticksUsing = 0;
+    private static boolean reverse = false;
+    private static boolean flag = false;
+    private static int iter = 0;
+    private static int ticksUsing = 0;
 
     @SubscribeEvent
     @SideOnly(Side.CLIENT)
-    public void renderHand(RenderHandEvent event){
+    public static void renderHand(RenderHandEvent event){
         if(flag){
             if(iter % 2 == 0)
                 transformEatFirstPerson(event.getPartialTicks(), EnumHandSide.LEFT);
@@ -80,10 +86,10 @@ public class NABB {
                 ticksUsing--;
 
             if(ticksUsing >= 32){
-                Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player.getPosition(), this.beeSquelchSound, SoundCategory.PLAYERS, 1.0F, 0.5F+Minecraft.getMinecraft().world.rand.nextFloat(), false);
+                Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player.getPosition(), beeSquelchSound, SoundCategory.PLAYERS, 1.0F, 0.5F+Minecraft.getMinecraft().world.rand.nextFloat(), false);
                 reverse = true;
             }else if(ticksUsing <= 0){
-                Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player.getPosition(), this.beeSquelchSound, SoundCategory.PLAYERS, 1.0F, 0.5F+Minecraft.getMinecraft().world.rand.nextFloat(), false);
+                Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player.getPosition(), beeSquelchSound, SoundCategory.PLAYERS, 1.0F, 0.5F+Minecraft.getMinecraft().world.rand.nextFloat(), false);
                 reverse = false;
                 if(iter < 2)
                     iter++;
@@ -96,7 +102,7 @@ public class NABB {
         }
     }
 
-    private void transformEatFirstPerson(float partialTicks, EnumHandSide handSide)
+    private static void transformEatFirstPerson(float partialTicks, EnumHandSide handSide)
     {
         float f = (float)ticksUsing - partialTicks + 1.0F;
         float f1 = f / (float)33;
