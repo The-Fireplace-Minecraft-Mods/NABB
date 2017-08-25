@@ -13,8 +13,11 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.config.Config;
+import net.minecraftforge.common.config.ConfigManager;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.fml.client.event.ConfigChangedEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -28,7 +31,7 @@ import the_fireplace.nabb.network.PacketDispatcher;
 /**
  * @author The_Fireplace
  */
-@Mod(modid=NABB.MODID, name=NABB.MODNAME, dependencies = "required-after:forestry")
+@Mod(modid=NABB.MODID, name=NABB.MODNAME, dependencies = "required-after:forestry", guiFactory = "the_fireplace.nabb.NABBConfigFactory", acceptedMinecraftVersions = "[1.12,)")
 @Mod.EventBusSubscriber
 public class NABB {
     public static final String MODID = "nabb";
@@ -58,12 +61,28 @@ public class NABB {
             return;
         }
         if(BeeManager.beeRoot.getType(stack1) != null && BeeManager.beeRoot.getType(stack2) != null) {
-            if((BeeManager.beeRoot.isDrone(stack1) && BeeManager.beeRoot.getType(stack2) == EnumBeeType.PRINCESS) || (BeeManager.beeRoot.isDrone(stack2) && BeeManager.beeRoot.getType(stack1) == EnumBeeType.PRINCESS)) {
+            if(ConfigValues.recreational_bee_smushing || ((BeeManager.beeRoot.isDrone(stack1) && BeeManager.beeRoot.getType(stack2) == EnumBeeType.PRINCESS) || (BeeManager.beeRoot.isDrone(stack2) && BeeManager.beeRoot.getType(stack1) == EnumBeeType.PRINCESS))) {
                 if (event.getEntityLiving().world.isRemote) {
                     flag = true;
                 }
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void configChanged(ConfigChangedEvent.OnConfigChangedEvent event){
+    	if(event.getModID().equals(MODID))
+		    ConfigManager.sync(MODID, Config.Type.INSTANCE);
+    }
+
+    @Config(modid=MODID, name=MODNAME)
+    public static class ConfigValues {
+    	@Config.Comment("Enabling this lets you smush any two bees together. Queens will only be produced if the two bees being smushed can produce a Queen.")
+	    @Config.LangKey("recreational_bee_smushing")
+    	public static boolean recreational_bee_smushing = false;
+    	@Config.Comment("Does Recreational Bee Smushing kill the bees?")
+	    @Config.LangKey("recreational_bee_smushing_kills")
+	    public static boolean recreational_bee_smushing_kills = true;
     }
 
     private static boolean reverse = false;

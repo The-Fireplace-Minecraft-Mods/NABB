@@ -1,1 +1,2 @@
 Updated to 1.12.x
+Added a config option to allow Recreational Bee Smushing

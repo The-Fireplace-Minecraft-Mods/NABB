@@ -16,6 +16,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import the_fireplace.nabb.NABB;
 
 /**
  * @author The_Fireplace
@@ -53,6 +54,9 @@ public class BeePopMessage implements IMessage {
                     } else if ((BeeManager.beeRoot.isDrone(stack2) && BeeManager.beeRoot.getType(stack1) == EnumBeeType.PRINCESS)) {
                         player.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, breed(stack2, stack1, player.world, player.getGameProfile()));
                         player.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
+                    } else if(NABB.ConfigValues.recreational_bee_smushing_kills) {
+	                    player.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, ItemStack.EMPTY);
+	                    player.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
                     }
                 }
                 player.world.playSound(player, player.getPosition(), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 1.0F, 1.0F);
