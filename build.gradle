@@ -23,7 +23,7 @@ apply plugin: 'net.cazzar.gradle.modsio'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
-version = "1.0.3"
+version = "1.0.4"
 group= "the_fireplace.nabb"
 archivesBaseName = "NewAgeBeeBreeding-1.12.2"
 

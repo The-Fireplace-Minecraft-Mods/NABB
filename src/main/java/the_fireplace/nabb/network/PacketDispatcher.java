@@ -14,7 +14,7 @@ public final class PacketDispatcher {
     private static final SimpleNetworkWrapper dispatcher = NetworkRegistry.INSTANCE.newSimpleChannel(NABB.MODID);
 
     public static void registerPackets() {
-        PacketDispatcher.registerMessage(BeePopMessage.Handler.class, BeePopMessage.class, Side.SERVER);
+        PacketDispatcher.registerMessage(PlayBeeAnimation.Handler.class, PlayBeeAnimation.class, Side.CLIENT);
     }
 
     @SuppressWarnings("unchecked")

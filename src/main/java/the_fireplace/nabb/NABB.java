@@ -1,32 +1,38 @@
 package the_fireplace.nabb;
 
+import com.mojang.authlib.GameProfile;
 import forestry.api.apiculture.BeeManager;
 import forestry.api.apiculture.EnumBeeType;
-import net.minecraft.block.SoundType;
+import forestry.api.apiculture.IBee;
+import forestry.apiculture.ModuleApiculture;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
+import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderHandEvent;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.ConfigManager;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import the_fireplace.nabb.network.BeePopMessage;
 import the_fireplace.nabb.network.PacketDispatcher;
+import the_fireplace.nabb.network.PlayBeeAnimation;
 
 /**
  * @author The_Fireplace
@@ -55,16 +61,43 @@ public class NABB {
 
     @SubscribeEvent
     public static void itemRightClick(PlayerInteractEvent.RightClickItem event){
+        if(event.getWorld().isRemote)
+            return;
+
         ItemStack stack1 = event.getEntityLiving().getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
         ItemStack stack2 = event.getEntityLiving().getItemStackFromSlot(EntityEquipmentSlot.OFFHAND);
-        if(stack2.isEmpty() || stack1.isEmpty()) {
+        if(stack2.isEmpty() || stack1.isEmpty())
             return;
-        }
         if(BeeManager.beeRoot.getType(stack1) != null && BeeManager.beeRoot.getType(stack2) != null) {
             if(ConfigValues.recreational_bee_smushing || ((BeeManager.beeRoot.isDrone(stack1) && BeeManager.beeRoot.getType(stack2) == EnumBeeType.PRINCESS) || (BeeManager.beeRoot.isDrone(stack2) && BeeManager.beeRoot.getType(stack1) == EnumBeeType.PRINCESS))) {
-                if (event.getEntityLiving().world.isRemote) {
-                    flag = true;
-                }
+                new Thread(()->{
+                    if(!ConfigValues.instant_smush) {
+                        PacketDispatcher.sendTo(new PlayBeeAnimation(), (EntityPlayerMP) event.getEntityPlayer());
+                        try {
+                            Thread.sleep(32 * 3 * 50);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    FMLCommonHandler.instance().getMinecraftServerInstance().addScheduledTask(() -> {
+                        ItemStack stack1a = stack1.copy();
+                        ItemStack stack2a = stack2.copy();
+                        EntityPlayer player = event.getEntityPlayer();
+                        if (BeeManager.beeRoot.getType(stack1a) != null && BeeManager.beeRoot.getType(stack2a) != null && !player.world.isRemote) {
+                            if ((BeeManager.beeRoot.isDrone(stack1a) && BeeManager.beeRoot.getType(stack2a) == EnumBeeType.PRINCESS)) {
+                                player.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, breed(stack1a, stack2a, player.world, player.getGameProfile()));
+                                player.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, ItemStack.EMPTY);
+                            } else if ((BeeManager.beeRoot.isDrone(stack2a) && BeeManager.beeRoot.getType(stack1a) == EnumBeeType.PRINCESS)) {
+                                player.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, breed(stack2a, stack1a, player.world, player.getGameProfile()));
+                                player.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
+                            } else if(NABB.ConfigValues.recreational_bee_smushing_kills) {
+                                player.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, ItemStack.EMPTY);
+                                player.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
+                            }
+                        }
+                        player.world.playSound(player, player.getPosition(), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 1.0F, 1.0F);
+                    });
+                }).start();
             }
         }
     }
@@ -83,10 +116,17 @@ public class NABB {
     	@Config.Comment("Does Recreational Bee Smushing kill the bees?")
 	    @Config.LangKey("recreational_bee_smushing_kills")
 	    public static boolean recreational_bee_smushing_kills = true;
+    	@Config.Comment("If this is true, bees will be smushed instantly, with no animation.")
+        @Config.LangKey("instant_smush")
+    	public static boolean instant_smush = false;
     }
 
+    /***********************************************
+     **   Client Animation Code past this point   **
+     ***********************************************/
+
     private static boolean reverse = false;
-    private static boolean flag = false;
+    public static boolean flag = false;
     private static int iter = 0;
     private static int ticksUsing = 0;
 
@@ -115,12 +155,12 @@ public class NABB {
                 else{
                     flag=false;
                     iter = 0;
-                    PacketDispatcher.sendToServer(new BeePopMessage());
                 }
             }
         }
     }
 
+    @SideOnly(Side.CLIENT)
     private static void transformEatFirstPerson(float partialTicks, EnumHandSide handSide)
     {
         float f = (float)ticksUsing - partialTicks + 1.0F;
@@ -132,5 +172,24 @@ public class NABB {
         GlStateManager.rotate((float)i * f3 * 90.0F, 0.0F, 1.0F, 0.0F);
         GlStateManager.rotate(f3 * 10.0F, 1.0F, 0.0F, 0.0F);
         GlStateManager.rotate((float)i * f3 * 30.0F, 0.0F, 0.0F, 1.0F);
+    }
+
+    public static ItemStack breed(ItemStack droneStack, ItemStack princessStack, World world, GameProfile player){
+        IBee princess = BeeManager.beeRoot.getMember(princessStack);
+        IBee drone = BeeManager.beeRoot.getMember(droneStack);
+        NBTTagCompound nbttagcompound = new NBTTagCompound();
+        if(princess != null && drone != null) {
+            princess.mate(drone);
+
+            princess.writeToNBT(nbttagcompound);
+        }
+        ItemStack queenStack = new ItemStack(ModuleApiculture.getItems().beeQueenGE);
+        queenStack.setTagCompound(nbttagcompound);
+
+        // Register the new queen with the breeding tracker
+        if(princess != null)
+            BeeManager.beeRoot.getBreedingTracker(world, player).registerQueen(princess);
+
+        return queenStack;
     }
 }

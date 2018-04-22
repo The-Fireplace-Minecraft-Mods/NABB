@@ -1,1 +1,3 @@
-Fixed bee breeding with newer versions of Forestry
+Switched breed timing to be handled by the server
+Improved network handling
+Added the option to instantly smush bees.
