@@ -4,7 +4,7 @@ import com.mojang.authlib.GameProfile;
 import forestry.api.apiculture.BeeManager;
 import forestry.api.apiculture.EnumBeeType;
 import forestry.api.apiculture.IBee;
-import forestry.apiculture.PluginApiculture;
+import forestry.apiculture.ModuleApiculture;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.SoundEvents;
@@ -73,7 +73,7 @@ public class BeePopMessage implements IMessage {
 
                 princess.writeToNBT(nbttagcompound);
             }
-            ItemStack queenStack = new ItemStack(PluginApiculture.getItems().beeQueenGE);
+            ItemStack queenStack = new ItemStack(ModuleApiculture.getItems().beeQueenGE);
             queenStack.setTagCompound(nbttagcompound);
 
             // Register the new queen with the breeding tracker
