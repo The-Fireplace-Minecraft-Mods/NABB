@@ -105,7 +105,7 @@ curseforge {
   project {
     id = '246221'
     changelog = file('changelog.txt')
-    releaseType = 'release'
+    releaseType = 'beta'
     addGameVersion '1.12.2'
     addGameVersion '1.12.1'
     addGameVersion '1.12'
@@ -114,6 +114,7 @@ curseforge {
         displayName = jar.archiveName.replace(".jar", "")
         relations{
 			requiredLibrary 'forestry'
+			optionalLibrary 'quark'
 		}
     }
     addArtifact(sourceJar) {
@@ -134,7 +135,7 @@ modsIO {
 		modid = "1256"
 		minecraft = "1.12.2"
 		try{changelog = file('changelog.txt').text}catch(Exception e){changelog=""}
-		tag = ""
+		tag = "beta"
 		current = true
     }
 }
